@@ -1,4 +1,4 @@
-function [codebook,counters] = LBG_split(T,L,R,eps,delta)
+function codebook = LBG_split(T,L,R,eps,delta)
     K = 2^(L*R);
     codebook = zeros(K, L, 'double');
     codebook(1,:) = mean(T); % initial centroid: mean of the training set
@@ -31,9 +31,8 @@ function [codebook,counters] = LBG_split(T,L,R,eps,delta)
             fprintf("\nInitialization (K = %d):\n", 2*N);
      
             for i=1:N
-                curr_centr = codebook(i,:);
-                codebook(i,:) = (1-eps)*curr_centr;
-                codebook(N+i,:) = (1+eps)*curr_centr;
+                %codebook(N+i,:) = (1+eps)*codebook(i,:);
+                codebook(N+i,:) = codebook(i,:) + eps;
             end
             N = 2*N;
         end
@@ -47,13 +46,11 @@ function [codebook,counters] = LBG_split(T,L,R,eps,delta)
         max_sample = 0;
         max_codevec = 0;
         % find the nearest centroid for each training sample
-        tic
         for i=1:size(T,1)
             % look for the nearest codevector
             argmin = 0;
             min_dist = realmax;
             for j=1:N
-                %temp_dist = norm((T(i,:) - codebook(j,:)))^2;
                 temp_dist = double(0);
                 for y = 1:L
                     temp_dist = temp_dist + (T(i,y) - codebook(j,y))^2;
@@ -74,7 +71,7 @@ function [codebook,counters] = LBG_split(T,L,R,eps,delta)
                 max_codevec = argmin;
             end
         end
-        toc
+        
         % check if there is a codevector with no samples associated to it
         % if it exists, substitute this "void" codevector with the sample that contributes the most to
         % the distortion measure
@@ -103,4 +100,6 @@ function [codebook,counters] = LBG_split(T,L,R,eps,delta)
         rel_improv = (distorsion_prev - distorsion_curr)/distorsion_prev;
         fprintf("\tImprovement = %f %%\n", rel_improv*100);
     end
+    % return the codebook with only integer values
+    codebook = int16(codebook);
 end
